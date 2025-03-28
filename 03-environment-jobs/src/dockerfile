@@ -1,0 +1,38 @@
+# Use the Tidyverse base image with a specific version for stability
+FROM rocker/tidyverse:4.3.2
+
+# Set Environment Variables
+ENV DEBIAN_FRONTEND=noninteractive \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    libxml2-dev \
+    python3-pip \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies (mlflow & AzureML-mlflow)
+RUN pip3 install --upgrade pip setuptools wheel && \
+    pip3 install mlflow azureml-mlflow
+
+# Install R packages required for logging with mlflow (these are necessary)
+RUN R -e "install.packages('mlflow', dependencies = TRUE, repos = 'https://cloud.r-project.org/')"
+RUN R -e "install.packages('carrier', dependencies = TRUE, repos = 'https://cloud.r-project.org/')"
+RUN R -e "install.packages('optparse', dependencies = TRUE, repos = 'https://cloud.r-project.org/')"
+RUN R -e "install.packages('tcltk2', dependencies = TRUE, repos = 'https://cloud.r-project.org/')"
+
+
+# Install R packages (including mlflow for R)
+RUN R -e "install.packages(c(\'optparse','fpp3', 'ClustOfVar', 'qs', 'urca',\
+'jsonlite', 'plumber' \),dependencies = TRUE,repos = 'https://cloud.r-project.org/')"
+
+
+# Set working directory
+WORKDIR /app
+
+# Default command: Open R
+CMD ["R"]

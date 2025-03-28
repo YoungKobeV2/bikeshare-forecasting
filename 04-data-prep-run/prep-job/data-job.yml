@@ -1,0 +1,15 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandJob.schema.json
+
+environment: azureml:env:9
+compute: azureml:TrainCompute
+experiment_name: bikeshare-forecasting
+
+inputs:
+    bikesharedata:
+      type: uri_folder
+      path: azureml:bikesharedata:1
+
+code: /home/azureuser/cloudfiles/code/bikeshare/04-data-prep-run/prep-job
+command: >- 
+ Rscript data_prep.r --data_folder ${{inputs.bikesharedata}}
+
