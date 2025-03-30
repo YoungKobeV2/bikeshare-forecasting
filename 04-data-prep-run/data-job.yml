@@ -7,7 +7,7 @@ experiment_name: bikeshare-forecasting
 inputs:
     bikesharedata:
       type: uri_folder
-      path: azureml:bikesharedata:1
+      path: azureml:bikehour:1
 
 code: /home/azureuser/cloudfiles/code/bikeshare/04-data-prep-run/prep-job
 command: >- 

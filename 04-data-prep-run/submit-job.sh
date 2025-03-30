@@ -1,0 +1,1 @@
+az ml job create -f data-job.yml

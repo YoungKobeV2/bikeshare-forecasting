@@ -23,13 +23,10 @@ RUN pip3 install --upgrade pip setuptools wheel && \
 RUN R -e "install.packages('mlflow', dependencies = TRUE, repos = 'https://cloud.r-project.org/')"
 RUN R -e "install.packages('carrier', dependencies = TRUE, repos = 'https://cloud.r-project.org/')"
 RUN R -e "install.packages('optparse', dependencies = TRUE, repos = 'https://cloud.r-project.org/')"
-RUN R -e "install.packages('tcltk2', dependencies = TRUE, repos = 'https://cloud.r-project.org/')"
-
 
 # Install R packages (including mlflow for R)
 RUN R -e "install.packages(c(\'optparse','fpp3', 'ClustOfVar', 'qs', 'urca',\
 'jsonlite', 'plumber' \),dependencies = TRUE,repos = 'https://cloud.r-project.org/')"
-
 
 # Set working directory
 WORKDIR /app
