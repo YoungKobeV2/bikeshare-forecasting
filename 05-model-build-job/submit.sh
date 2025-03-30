@@ -1,0 +1,1 @@
+az ml job create -f model-job.yml

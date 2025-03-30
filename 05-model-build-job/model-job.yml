@@ -1,0 +1,14 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandJob.schema.json
+
+code: 05-model-build-job
+command: >-
+ Rscript build-model.r --data_folder ${{inputs.bikedata}}
+
+inputs:
+    bikedata:
+      type: uri_folder
+      path: azureml:bike_clean:1
+
+environment: azureml:env:8
+compute: azureml:TrainCompute
+experiment_name: bikeshare_forecasting

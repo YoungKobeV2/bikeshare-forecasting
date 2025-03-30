@@ -1,0 +1,30 @@
+$schema: https://azuremlschemas.azureedge.net/latest/managedOnlineDeployment.schema.json
+
+name: bikeshare-api
+
+# endpoint for api
+endpoint_name: bikeshare-forecasting
+
+# entry script
+code_configuration:
+  code: 06-create-acr
+  scoring_script: plumber.r
+
+# environment and inference config
+environment:
+  image: ACR_NAME
+
+  inference_config:
+      liveness_route:
+          path: /alive
+          port: 8000
+      readiness_route:
+          path: /ready
+          port: 8000
+      scoring_route:
+          path: /predict
+          port: 8000
+
+# compute
+instance_type: Standard_E16s_v3          
+        

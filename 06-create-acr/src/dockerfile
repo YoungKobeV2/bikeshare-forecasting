@@ -1,0 +1,21 @@
+FROM rstudio/plumber
+
+# Copy PLumber.R and Start_plumber.r
+COPY /06-create-acr/plumber.r /app/plumber.R
+COPY /06-create-acr/start_plumber.r /app/start_plumber.R
+
+# install need packages
+RUN R -e "install.packages(c('fpp3','urca','jsonlite','dplyr','tidyr'),\
+    repos='https://cloud.r-project.org'),dependencies=TRUE)"
+
+# set workdir
+WORKDIR /app
+
+# EXPOSE PORT
+EXPOSE 8000
+
+# clear CMD
+ENTRYPOINT [] 
+
+# command to run when container opens
+CMD ["Rscript","/app/start_plumber.r"]

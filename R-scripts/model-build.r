@@ -1,12 +1,33 @@
 require(fpp3)
+require(optparse)
 require(ggplot2)
 require(patchwork)
 require(urca)
 
+#### make options ####
+parser <- OptionParser()
 
-# Load data
-bikeshare <- bikeshare %>%
-    as_tsibble(index = dteday)
+parser <- add_option(
+    parser,
+    "--data_folder",
+    action = "store",
+    type = "character"
+)
+
+args <- parse_args(parser)
+
+#### end #####
+
+#### Load data ####
+path <- file.path(args$data_folder, "hour.csv")
+
+bikeshare <- read.csv(path)
+
+bikeshare <- bikeshare %>% as_tsibble(index = dteday)
+
+summary(bikeshare)
+
+#### end #####
 
 #### plot time series ####
 bikeshare %>%
@@ -108,23 +129,12 @@ test <- bikeshare %>%
 test_mod <- bikeshare %>%
     fill_gaps() %>%
     model(
-        norm_seas = ARIMA(log(cnt) ~ trend_comp + isWorkday +
-            fourier(period = "day", K = 6) +
-            fourier(period = "week", K = 10) +
-            fourier(period = "month", K = 3)),
-
-        day_switch = ARIMA(log(cnt)~trend_comp+isWorkday+
+        ARIMA(log(cnt)~trend_comp+isWorkday+
         fourier(period="day",K=6):isWorkday+
-        fourier(period="week",K=10)+
-        fourier(period="month",K=3)),
-
-        day_week_switch = ARIMA(log(cnt)~trend_comp+isWorkday+
-        fourier(period="day",K=6):isWorkday+
-        fourier(period="week",K=10):isWorkday+
-        fourier(period="month",K=3):isWorkday)
+        fourier(period="week",K=10):isWorkday)
     )
-test_mod
-test_mod %>% accuracy()
+acc <- accuracy(test_mod)
+
 
 bikeshare %>%
     filter(yearmonth(dteday) == yearmonth("2011 Jan")) %>%

@@ -8,7 +8,7 @@ source("utilities.r")
 
 #### create run output directory ####
 if (!dir.exists("./outputs")) {
-    dir.create("./outputs")
+  dir.create("./outputs")
 }
 #### end #####
 
@@ -16,10 +16,10 @@ if (!dir.exists("./outputs")) {
 parser <- OptionParser()
 
 parser <- add_option(
-    parser,
-    opt_str = "--data_folder",
-    action = "store",
-    type = "character"
+  parser,
+  opt_str = "--data_folder",
+  action = "store",
+  type = "character"
 )
 
 args <- parse_args(parser)
@@ -27,6 +27,7 @@ args <- parse_args(parser)
 #### end ####
 
 #### Load data ####
+data <- read.csv("hour.csv") %>% as_tibble()
 data_dir <- args$data_folder
 path <- file.path(data_dir,"hour.csv")
 data <- read.csv(path) %>% as_tibble()
@@ -39,18 +40,18 @@ data <- read.csv(path) %>% as_tibble()
 
 # fix date variable
 data$dteday <- as_datetime(paste0(data$dteday," ",data$hr,":00:00"))
+data <- data %>% as_tsibble(index = dteday)
 
 # create workday variable
 data <- data %>%
-    mutate(isWorkday = ifelse(data$holiday == 1 | data$weekday %in% c(6, 7), FALSE,TRUE)) %>%
-    select(-holiday,-weekday)
+  mutate(isWorkday = ifelse(data$holiday == 0 & data$workingday == 1,TRUE,FALSE))
 
 data$weathersit %>% table()
 
 # remove useless variables
 bikeshare <- data %>%
-    select(dteday, isWorkday, weathersit, temp, atemp, hum, windspeed, casual, cnt) %>%
-    mutate(isWorkday = factor(isWorkday), weathersit = factor(weathersit))
+  select(dteday, isWorkday, weathersit, temp, atemp, hum, windspeed, casual, cnt) %>%
+  mutate(isWorkday = factor(isWorkday), weathersit = factor(weathersit))
 
 #scale numeric variables 
 class <- sapply(bikeshare, class)
@@ -70,8 +71,8 @@ fact_v <- colnames(bikeshare)[grep("factor", class)]
 
 # inputs should be in matrices
 hclust_mod <- hclustvar(
-    X.quanti = bikeshare[, num_v] %>% as.matrix(),
-    X.quali = bikeshare[, fact_v] %>% as.matrix()
+  X.quanti = bikeshare[, num_v] %>% as.matrix(),
+  X.quali = bikeshare[, fact_v] %>% as.matrix()
 )
 
 # determine number of clusters using dendogram
@@ -80,16 +81,16 @@ nclust <- 5
 
 # k means
 kmeans_mod <- kmeansvar(
-    X.quanti = bikeshare[, num_v] %>% as.matrix(),
-    X.quali = bikeshare[, fact_v] %>% as.matrix(),
-    nstart=10 , init = nclust
+  X.quanti = bikeshare[, num_v] %>% as.matrix(),
+  X.quali = bikeshare[, fact_v] %>% as.matrix(),
+  nstart=20, init = nclust
 )
 
 # remove redundant variable
 kmeans_mod$var
 
 bikeshare <- bikeshare %>%
-    select(-atemp,-weathersit)
+  select(-atemp,-weathersit)
 
 # redo hclust to see if there are still redudant variable
 class <- sapply(bikeshare, class)
@@ -98,26 +99,26 @@ fact_v <- colnames(bikeshare)[grep("factor", class)]
 
 # inputs should be in matrices
 hclust_mod <- hclustvar(
-    X.quanti = bikeshare[, num_v] %>% as.matrix(),
-    X.quali = bikeshare[, fact_v] %>% as.matrix()
+  X.quanti = bikeshare[, num_v] %>% as.matrix(),
+  X.quali = bikeshare[, fact_v] %>% as.matrix()
 )
 
 # determine number of clusters using dendogram
 ClustOfVar::plot.hclustvar(hclust_mod)
-nclust = 3
+nclust <- 4
 
 # Kmeans
 kmeans_mod <- kmeansvar(
-    X.quanti = bikeshare[, num_v] %>% as.matrix(),
-    X.quali = bikeshare[, fact_v] %>% as.matrix(),
-    nstart=20, init = nclust
+  X.quanti = bikeshare[, num_v] %>% as.matrix(),
+  X.quali = bikeshare[, fact_v] %>% as.matrix(),
+  init = nclust, nstart=20
 )
 
 # remove redundant variable
 kmeans_mod$var
 
 bikeshare <- bikeshare %>%
-    select(-windspeed,-casual)
+  select(-temp)
 
 bikeshare
 
@@ -128,29 +129,26 @@ bikeshare
 
 require(ggplot2)
 
-a <- bikeshare %>%
-    ggplot(aes(x = temp, y = cnt)) +
-    geom_point() +
-    geom_smooth() +
-    labs(title = "cnt vs temp")
+a <- data %>%
+  ggplot(aes(x = casual, y = cnt)) +
+  geom_point() +
+  geom_smooth() +
+  labs(title = "cnt vs casual")+
+  scale_x_continuous(n.breaks = 20)
 
 b <- bikeshare %>%
-    ggplot(aes(x = hum, y = cnt)) +
-    geom_point() +
-    geom_smooth() +
-    labs(
-        title = "cnt vs hum",
-        subtitle = "Needs at knot at hum=-2"
-    )
+  ggplot(aes(x = hum, y = cnt)) +
+  geom_point() +
+  geom_smooth() +
+  labs(
+    title = "cnt vs hum"
+  )
 
 ggsave(plot = a, path = "./outputs", filename = "a.png")
 ggsave(plot = b , path = "./outputs", filename = "b.png")
 
 mlflow_log_artifact(path = "./outputs/a.png")
 mlflow_log_artifact(path = "./outputs/b.png")
-
-bikeshare <- bikeshare %>%
-    mutate(hum_knot = pmax(hum, -2))
 
 #### end ####
 
